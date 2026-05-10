@@ -219,80 +219,6 @@ async function startServer() {
         { Sport: sport || 'Generalist', Gold: 0, Silver: 0, Bronze: 0, Height: height || 178, Hometown: homeTown || 'USA', City: 'USA', Year: 2024, Season: 'Summer', olympic_paralympic: 'Olympic', fun_fact: 'Aligns with the historical spirit of the multisport Games.' }
       ];
 
-      // Fetch biometric baseline for metabolic intelligence from the new Kaggle-sourced table
-      let metabolicBaseline = null;
-      try {
-        const metabolicQuery = `
-          SELECT 
-            height,
-            weight
-          FROM \`hackathon-495402.hackathon.athletes_usa_kg\`
-          WHERE height != 'NA' 
-          AND weight != 'NA'
-          AND LOWER(sport) LIKE @sportPattern
-          LIMIT 1
-        `;
-        const [metaRows] = await bigquery.query({
-          query: metabolicQuery,
-          params: { 
-            sportPattern: `%${(sport || "").toLowerCase()}%`
-          }
-        });
-        
-        if (metaRows.length > 0) {
-          metabolicBaseline = {
-            height: Number(metaRows[0].height),
-            weight: Number(metaRows[0].weight)
-          };
-        }
-      } catch (metaErr) {
-        console.warn("Metabolic baseline fetch failed:", metaErr);
-      }
-
-      // New health intelligence layer: Fetch regional health vitality benchmarks
-      let regionalHealthContext = null;
-      if (homeTown) {
-        try {
-          const stateAbbr = getStateAbbr(homeTown);
-          const healthQuery = `
-            SELECT 
-              measure_name,
-              value
-            FROM \`bigquery-public-data.america_health_rankings.ahr\`
-            WHERE state_name = @stateName 
-            AND measure_name IN ('Physical Inactivity', 'High School Graduation', 'Fruit and Vegetable Consumption', 'Obesity')
-            AND edition = 2022
-            LIMIT 5
-          `;
-          const stateFullNames: {[key: string]: string} = {
-            'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
-            'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
-            'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
-            'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
-            'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
-            'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
-            'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
-            'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
-            'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
-            'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
-          };
-          const fullName = stateFullNames[stateAbbr] || homeTown;
-
-          const [healthRows] = await bigquery.query({
-            query: healthQuery,
-            params: { stateName: fullName }
-          });
-          if (healthRows.length > 0) {
-            regionalHealthContext = healthRows.reduce((acc: any, curr: any) => {
-              acc[curr.measure_name] = curr.value;
-              return acc;
-            }, {});
-          }
-        } catch (hErr) {
-          console.warn("Health Data Fetching Silently Deferred:", hErr);
-        }
-      }
-
       // Heuristic clustering for "Archetypes"
       const getArchetype = (sportType: string, h: number) => {
         const s = (sportType || '').toLowerCase();
@@ -349,8 +275,6 @@ async function startServer() {
           containsParalympic,
           matchedHometowns,
           educationLegacy,
-          regionalHealthContext,
-          metabolicBaseline,
           paraClassifications: Array.from(new Set(finalRows.map(r => r.para_classification).filter(Boolean))),
           rawVerificationData: finalRows.slice(0, 5).map(r => ({
               sport: r.Sport,

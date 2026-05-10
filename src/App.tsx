@@ -40,10 +40,6 @@ interface ArchetypeResult {
     matchedHometowns: string[];
     educationLegacy?: boolean;
     regionalHealthContext?: Record<string, any>;
-    metabolicBaseline?: {
-      height: number;
-      weight: number;
-    };
     rawVerificationData?: {
       sport: string;
       years: string;
@@ -264,33 +260,20 @@ export default function App() {
       }
 
       setResult(data as ArchetypeResult);
-      const meta = data.legacyStats.metabolicBaseline;
 
       // Age Verification Sub-task - Run asynchronously
       if (data.legacyStats.rawVerificationData) {
         verifyAges(data.legacyStats.rawVerificationData);
       }
 
-      // Local Metabolic Intelligence
+      // Local Metric Sync
       const hInput = Number(formData.height);
       const wInput = Number(formData.weight);
-      const ageBase = Number(formData.age);
-      
-      // Convert LBS (user input) to KG for internal processing
-      const hBase = hInput; // Still in CM
       const wBase = wInput * 0.453592; // LBS to KG
-      
-      const bmi = wBase > 0 && hBase > 0 ? (wBase / Math.pow(hBase / 100, 2)).toFixed(1) : "N/A";
-      // Harris-Benedict Equation for BMR (Male baseline for athletic proxy)
-      const bmr = wBase > 0 && hBase > 0 ? (10 * wBase + 6.25 * hBase - 5 * ageBase + 5).toFixed(0) : "N/A";
-      
-      const peerMeta = data.legacyStats.metabolicBaseline;
-      const peerBmi = peerMeta ? (peerMeta.weight / Math.pow(peerMeta.height / 100, 2)).toFixed(1) : null;
 
       // AI generation - move into its own try block to prevent blocking the results
       if (data.archetype) {
         try {
-          const healthData = data.legacyStats.regionalHealthContext || {};
           const prompt = `Analyze a fan's body type and traits against 120 years of Team USA historical data.
             Technical Context:
             - Profile: ${formData.height}cm, ${formData.weight}lbs (${wBase.toFixed(1)}kg), ${formData.age}y
@@ -1184,82 +1167,6 @@ export default function App() {
                     <div className="text-[8px] font-black uppercase mt-1 opacity-80 decoration-white/30 underline underline-offset-2"> Inclusive Design</div>
                   </div>
                 </motion.div>
-
-                {/* Metabolic & Health Intelligence Card */}
-                {result?.legacyStats?.metabolicBaseline && (
-                  <motion.div 
-                     initial={{ opacity: 0, scale: 0.95 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     className="col-span-12 lg:col-span-4 bg-white border-2 border-slate-900 p-5 shadow-bento relative group overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 p-2 opacity-5">
-                      <Heart className="w-16 h-16 text-olympic-red" />
-                    </div>
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <Activity className="w-3 h-3 text-olympic-red" />
-                        Metabolic Intelligence
-                      </span>
-                      <div className="text-[8px] font-black bg-olympic-red/10 text-olympic-red px-2 py-0.5 rounded border border-olympic-red/20 shadow-sm">
-                        HEALTH-SYNC ENABLED
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <p className="text-[7px] font-black uppercase text-slate-400 mb-1">Personal Body Index</p>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-900 italic">
-                            {(Number(formData.weight) / Math.pow(Number(formData.height) / 100, 2)).toFixed(1)}
-                          </span>
-                          <span className="text-[8px] font-black uppercase text-slate-500">BMI</span>
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <p className="text-[7px] font-black uppercase text-slate-400 mb-1">Energy Baseline</p>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-900 italic">
-                            {(10 * Number(formData.weight) + 6.25 * Number(formData.height) - 5 * Number(formData.age) + 5).toFixed(0)}
-                          </span>
-                          <span className="text-[8px] font-black uppercase text-slate-500">KCAL / DAY</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {result.legacyStats.metabolicBaseline && (
-                      <div className="mb-4 p-2 bg-slate-900 text-white rounded flex justify-between items-center">
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Olympic Peer Contrast</span>
-                        <div className="text-[10px] font-black">
-                          {result.legacyStats.metabolicBaseline.weight}kg Avg Body Mass 
-                        </div>
-                      </div>
-                    )}
-
-
-                    {result?.legacyStats?.regionalHealthContext && (
-                      <div className="space-y-2">
-                         <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-1">Regional Health Vitality ({formData.homeTown || 'State-Level'})</p>
-                         <div className="grid grid-cols-2 gap-2">
-                            {Object.entries(result.legacyStats.regionalHealthContext).map(([key, val], idx) => (
-                              <div key={`${key}-${idx}`} className="flex justify-between items-center bg-slate-50/50 p-2 rounded-lg">
-                                 <span className="text-[8px] font-bold text-slate-600 truncate w-24" title={key}>{key}</span>
-                                 <span className="text-[10px] font-black text-olympic-blue">{val}%</span>
-                              </div>
-                            ))}
-                         </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-olympic-red/10 flex items-center justify-center flex-shrink-0 animate-pulse">
-                        <Sparkles className="w-4 h-4 text-olympic-red" />
-                      </div>
-                      <p className="text-[8px] font-bold text-slate-500 leading-tight italic">
-                        Metabolic rate calculated using real biometric data from historical Team USA {formData.sport} athletes (matching height/weight profiles).
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
 
                 {/* Storytelling Box */}
                 <motion.div 
