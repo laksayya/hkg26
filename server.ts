@@ -79,7 +79,7 @@ async function startServer() {
 
   // API endpoint for archetype analysis
   app.post("/api/match", async (req, res) => {
-    const { abilities, height, weight, homeTown, sport, age } = req.body;
+    const { abilities, height, homeTown, sport, age } = req.body;
 
     // Helper to map states to acronyms for regional context fetching
     const getStateAbbr = (input: string) => {

@@ -148,7 +148,6 @@ export default function App() {
   const [formData, setFormData] = useState({
     abilities: '',
     height: '',
-    weight: '',
     age: '',
     homeTown: '',
     sport: ''
@@ -241,10 +240,9 @@ export default function App() {
     setRevealedFacts([]);
 
     try {
-      // Send converted weight to API but keep formData for UI
+      // Send data to API
       const apiPayload = {
-        ...formData,
-        weight: Number(formData.weight) * 0.453592 // Convert LBS to KG for BigQuery/Archetype matching
+        ...formData
       };
 
       const response = await fetch('/api/match', {
@@ -268,15 +266,13 @@ export default function App() {
 
       // Local Metric Sync
       const hInput = Number(formData.height);
-      const wInput = Number(formData.weight);
-      const wBase = wInput * 0.453592; // LBS to KG
 
       // AI generation - move into its own try block to prevent blocking the results
       if (data.archetype) {
         try {
           const prompt = `Analyze a fan's body type and traits against 120 years of Team USA historical data.
             Technical Context:
-            - Profile: ${formData.height}cm, ${formData.weight}lbs (${wBase.toFixed(1)}kg), ${formData.age}y
+            - Profile: ${formData.height}cm stature, ${formData.age}y age
             - Archetype: ${data.archetype}
             - Matches Found: ${data.matchCount}
             - Para Classifications: ${Array.from(new Set(data.legacyStats.paraClassifications)).filter(Boolean).join(', ') || 'N/A'}
@@ -285,7 +281,7 @@ export default function App() {
             
             Analysis Requirements:
             1. THE "SPECIALIST" EXPLANATION (CRITICAL): If Medals Found = 0 but Matches Found > 0, YOU MUST EXPLAIN that their "Archival Peer" was an Elite Specialist or Finalist. Clarify that while they share the biological DNA of national-level athletes, these specific peers functioned as technical benchmarks (high-performance outliers) who established standard ranges without a podium finish in this subset.
-            2. Mechanical Resonance: Explicitly state how their ${formData.height}cm stature and ${wBase.toFixed(1)}kg mass align with the leverage requirements of the ${data.archetype} pool. 
+            2. Mechanical Resonance: Explicitly state how their ${formData.height}cm stature aligns with the leverage requirements of the ${data.archetype} pool. 
             3. PARA INTELLIGENCE (MANDATORY): If Para Classifications are present, YOU MUST EXPLICITLY MENTION the specific codes (e.g., WH1, SL3, T54) and explain how their traits like ${formData.abilities} specifically serve the technical demands and physics of those competitive classes.
             4. Actionable Context: Connect their traits like ${formData.abilities.split(', ').slice(0, 2).join(' and ')} to the foundational "engines" of ${getArchetypeSports(data.archetype).map(s => s.name).join(', ')}.
             5. TIMELINE INTEGRITY: Ground the analysis in the historical context of ${Array.from(new Set(data.legacyStats.historicalContext)).join(', ')} ONLY ONCE. Do NOT repeat event names or years.
@@ -592,17 +588,6 @@ export default function App() {
                     type="number"
                     name="height"
                     value={formData.height}
-                    required
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border-2 border-slate-900 focus:outline-none focus:bg-olympic-blue/5 font-bold text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">Weight (lbs)</label>
-                  <input 
-                    type="number"
-                    name="weight"
-                    value={formData.weight}
                     required
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border-2 border-slate-900 focus:outline-none focus:bg-olympic-blue/5 font-bold text-sm"
