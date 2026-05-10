@@ -79,9 +79,9 @@ async function startServer() {
 
   // API endpoint for archetype analysis
   app.post("/api/match", async (req, res) => {
-    const { abilities, height, homeTown, sport, age } = req.body;
+    const { abilities, height, weight, homeTown, sport, age } = req.body;
 
-    // Helper to map states to acronyms for better matching
+    // Helper to map states to acronyms for regional context fetching
     const getStateAbbr = (input: string) => {
       const states: {[key: string]: string} = {
         'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
@@ -99,11 +99,9 @@ async function startServer() {
       return states[cleaned] || cleaned.toUpperCase();
     };
 
-    const hometownSearch = homeTown ? `%${getStateAbbr(homeTown)}%` : '%';
-    const citySearch = homeTown ? `%${homeTown.toLowerCase()}%` : '%';
-
     try {
       // Construct the Master Query with user dynamic parameters
+      // Focused on Sport and Physiological resonance (height/weight)
       const query = `
         SELECT
           olympic_paralympic,
@@ -130,20 +128,18 @@ async function startServer() {
         WHERE (
           EXISTS(SELECT 1 FROM UNNEST(t.sport) s WHERE LOWER(s.title) LIKE LOWER(@sportParam))
         )
+        -- Biological Resonance Filtering (Height +/- 15cm for a broader historical pool)
         AND (
-          LOWER(bio.quick_facts.hometown.city) LIKE @cityParam
-          OR bio.quick_facts.hometown.state = @stateAbbr
-          OR @homeTownValue = ''
+          SAFE_CAST(bio.quick_facts.height AS FLOAT64) BETWEEN (@height - 15) AND (@height + 15)
+          OR bio.quick_facts.height IS NULL
         )
       `;
 
       const options = {
-        query: query + ` LIMIT 20`,
+        query: query + ` LIMIT 30`,
         params: { 
           sportParam: `%${(sport || "").toLowerCase()}%`, 
-          cityParam: citySearch,
-          stateAbbr: getStateAbbr(homeTown),
-          homeTownValue: homeTown || ''
+          height: Number(height) || 175
         },
       };
 
@@ -154,9 +150,9 @@ async function startServer() {
         const [bqRows] = await bigquery.query(options);
         rows = bqRows;
 
-        // If no rows found with direct hometown match, relax the hometown constraint but keep the sport
+        // If no rows found with physical constraints, fall back to just sport to ensure some result
         if (rows.length === 0) {
-          const relaxedOptions = {
+          const fallbackOptions = {
             query: `
               SELECT olympic_paralympic, para_classification, olympian_paralympian_years, bio.quick_facts.fun_fact as fun_fact, 
                      bio.quick_facts.height as Height, bio.quick_facts.age as Age, bio.quick_facts.birthday as birthday,
@@ -170,22 +166,22 @@ async function startServer() {
             `,
             params: { sportParam: `%${(sport || "").toLowerCase()}%` }
           };
-          const [relaxedRows] = await bigquery.query(relaxedOptions);
-          rows = relaxedRows;
-          
-          // Secondary check for education/university record in the user's region
-          if (homeTown) {
-            const eduQuery = `
-              SELECT COUNT(*) as count 
-              FROM \`hackathon-495402.hackathon.team_usa_athletes\` 
-              WHERE LOWER(bio.quick_facts.education) LIKE @region
-            `;
-            const [eduRows] = await bigquery.query({
-              query: eduQuery,
-              params: { region: `%${homeTown.toLowerCase()}%` }
-            });
-            if (eduRows[0]?.count > 0) educationMatchFound = true;
-          }
+          const [fallbackRows] = await bigquery.query(fallbackOptions);
+          rows = fallbackRows;
+        }
+
+        // Secondary check for education/university record in the user's region (Hometown used for Context, not filter)
+        if (homeTown) {
+          const eduQuery = `
+            SELECT COUNT(*) as count 
+            FROM \`hackathon-495402.hackathon.team_usa_athletes\` 
+            WHERE LOWER(bio.quick_facts.education) LIKE @region
+          `;
+          const [eduRows] = await bigquery.query({
+            query: eduQuery,
+            params: { region: `%${homeTown.toLowerCase()}%` }
+          });
+          if (eduRows[0]?.count > 0) educationMatchFound = true;
         }
 
         rows = rows.map(r => ({
@@ -355,6 +351,7 @@ async function startServer() {
           educationLegacy,
           regionalHealthContext,
           metabolicBaseline,
+          paraClassifications: Array.from(new Set(finalRows.map(r => r.para_classification).filter(Boolean))),
           rawVerificationData: finalRows.slice(0, 5).map(r => ({
               sport: r.Sport,
               years: r.olympian_paralympian_years,

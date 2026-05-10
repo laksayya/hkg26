@@ -54,6 +54,7 @@ interface ArchetypeResult {
       age: number;
       year: number;
     }[];
+    paraClassifications: string[];
   };
   isFallback?: boolean;
 }
@@ -295,15 +296,17 @@ export default function App() {
             - Profile: ${formData.height}cm, ${formData.weight}lbs (${wBase.toFixed(1)}kg), ${formData.age}y
             - Archetype: ${data.archetype}
             - Matches Found: ${data.matchCount}
+            - Para Classifications: ${Array.from(new Set(data.legacyStats.paraClassifications)).filter(Boolean).join(', ') || 'N/A'}
             - Medals Found: ${(data.legacyStats.medalBreakdown?.gold || 0) + (data.legacyStats.medalBreakdown?.silver || 0) + (data.legacyStats.medalBreakdown?.bronze || 0)}
             - Selected Traits: ${formData.abilities}
             
             Analysis Requirements:
             1. THE "SPECIALIST" EXPLANATION (CRITICAL): If Medals Found = 0 but Matches Found > 0, YOU MUST EXPLAIN that their "Archival Peer" was an Elite Specialist or Finalist. Clarify that while they share the biological DNA of national-level athletes, these specific peers functioned as technical benchmarks (high-performance outliers) who established standard ranges without a podium finish in this subset.
-            2. Mechanical Resonance: Explicitly state how their ${formData.height}cm stature and ${wBase.toFixed(1)}kg mass align with the leverage requirements of the ${data.archetype} pool.
-            3. Actionable Context: Connect their traits like ${formData.abilities.split(', ').slice(0, 2).join(' and ')} to the foundational "engines" of ${getArchetypeSports(data.archetype).map(s => s.name).join(', ')}.
-            4. TIMELINE INTEGRITY: Ground the analysis in the historical context of ${Array.from(new Set(data.legacyStats.historicalContext)).join(', ')} ONLY ONCE. Do NOT repeat event names or years.
-            5. TONE: Authoritative, cinematic, and deeply interpretive. Focus on the "Physics of Potential." Max 5 sentences.`;
+            2. Mechanical Resonance: Explicitly state how their ${formData.height}cm stature and ${wBase.toFixed(1)}kg mass align with the leverage requirements of the ${data.archetype} pool. 
+            3. PARA INTELLIGENCE (MANDATORY): If Para Classifications are present, YOU MUST EXPLICITLY MENTION the specific codes (e.g., WH1, SL3, T54) and explain how their traits like ${formData.abilities} specifically serve the technical demands and physics of those competitive classes.
+            4. Actionable Context: Connect their traits like ${formData.abilities.split(', ').slice(0, 2).join(' and ')} to the foundational "engines" of ${getArchetypeSports(data.archetype).map(s => s.name).join(', ')}.
+            5. TIMELINE INTEGRITY: Ground the analysis in the historical context of ${Array.from(new Set(data.legacyStats.historicalContext)).join(', ')} ONLY ONCE. Do NOT repeat event names or years.
+            6. TONE: Authoritative, cinematic, and deeply interpretive. Focus on the "Physics of Potential." Max 5 sentences.`;
 
           const aiResult = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
@@ -313,10 +316,13 @@ export default function App() {
         } catch (aiErr) {
           console.warn("AI Narrative synthesis failed, using data-only view:", aiErr);
           const medalTotal = (data.legacyStats.medalBreakdown?.gold || 0) + (data.legacyStats.medalBreakdown?.silver || 0) + (data.legacyStats.medalBreakdown?.bronze || 0);
+          const pClasses = Array.from(new Set(data.legacyStats.paraClassifications)).filter(Boolean);
+          const classContext = pClasses.length > 0 ? ` [${pClasses.join(', ')}]` : '';
+          
           if (data.matchCount > 0 && medalTotal === 0) {
-            setSummary(`Historical analysis complete. Your biological leverages match ${data.matchCount} archival Team USA specialists. While these mechanical peers represented the nation as technical benchmarks without reaching the podium, your profile demonstrates a perfect resonance with their elite physiological standards.`);
+            setSummary(`Historical analysis complete. Your biological leverages match ${data.matchCount} archival Team USA specialists${classContext}. While these mechanical peers represented the nation as technical benchmarks without reaching the podium, your profile demonstrates a perfect resonance with their elite physiological standards.`);
           } else {
-            setSummary("Historical sync successful. Your profile shows a strong resonance with the established biological benchmarks of the " + data.archetype + " archetype.");
+            setSummary(`Historical sync successful. Your profile shows a strong resonance with the established biological benchmarks of the ${data.archetype} archetype${classContext}.`);
           }
         }
       }
