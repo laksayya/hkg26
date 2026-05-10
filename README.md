@@ -1,20 +1,27 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Team USA Archetype Agent
 
-# Run and deploy your AI Studio app
+Challenge 4: A Digital Mirror clustering 120 years of Team USA historical data into Athlete Archetypes. Explore body types, Paralympic classifications, and Olympic legacies through data-driven storytelling.
 
-This contains everything you need to run your app locally.
+## License
 
-View your app in AI Studio: https://ai.studio/apps/568ae0df-0ad3-4f1e-a65b-47a2909ae43c
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## Run Locally
+## Description
 
-**Prerequisites:**  Node.js
+The Team USA Archetype Agent is a data-driven application that matches personal physical traits (height, weight, age, strengths) against the historical benchmarks of Team USA athletes from the last 120 years.
 
+### Key Features:
+- **Neural Analysis**: Visualizes your physical traits on a multi-axis radar chart.
+- **Archetype Revelation**: Matches you with a historical archetype (e.g., "The Tactical Strategist", "The Power Anchor").
+- **Geospatial Heritage Sync**: Shows the regional origin of athletes with similar profiles.
+- **Impact Scope**: Calculates a resonance score based on selected bio-traits.
+- **Historical Era Integration**: Grounded in the Summer Paris 2024 era and beyond.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Technologies Used
+- React + Vite
+- TypeScript
+- Tailwind CSS
+- Gemini API (via AI Studio)
+- BigQuery (Historical Dataset)
+- Framer Motion
+- Recharts (Data Visualization)
