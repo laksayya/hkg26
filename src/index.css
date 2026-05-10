@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-olympic-blue: #0081C8;
+  --color-olympic-yellow: #FCB131;
+  --color-olympic-green: #00A651;
+  --color-olympic-red: #EE334E;
+  
+  --shadow-bento: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-bento-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-bento-yellow: 8px 8px 0px 0px #FCB131;
+}
