@@ -48,6 +48,27 @@ async function startServer() {
   verifyData();
 
   app.use(express.json());
+
+  // Basic Auth Middleware to protect the application
+  app.use((req, res, next) => {
+    const authUser = process.env.APP_USERNAME;
+    const authPass = process.env.APP_PASSWORD;
+
+    // If credentials aren't set in environment, skip protection
+    if (!authUser || !authPass) {
+      return next();
+    }
+
+    const b64auth = (req.headers.authorization || "").split(" ")[1] || "";
+    const [login, pass] = Buffer.from(b64auth, "base64").toString().split(":");
+
+    if (login === authUser && pass === authPass) {
+      return next();
+    }
+
+    res.set("WWW-Authenticate", 'Basic realm="Team USA Archetype Agent"');
+    res.status(401).send("Authentication required.");
+  });
   
   // API endpoint to fetch available sports
   app.get("/api/sports", async (req, res) => {
